@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 
 // set the URL to the Victoria Falls Stock Exchange (VFEX) homepage
-const url = 'https://www.vfex.exchange/';
+const url = 'https://www.vfex.exchange/price-sheet/';
 
 // retrieving the current date to create a string to use when appending the CSV file and naming the JSON file
 function theDate() {
@@ -36,14 +36,14 @@ const getMarketActivity = async () => {
   })
 
   // take a screenshot of the full page as a backup
-  await page.screenshot({ path: `./vfex_screenshot/${theDate()}.png`, fullPage: true });
+  await page.screenshot({ path: `./equities/screenshot/${theDate()}.png`, fullPage: true });
   
   // retrieve the html data of the requested page, after the DOM content has loaded 
   // the data is then returned to the calling function where it passed on to a Promise for further execution   
   const result = await page.evaluate( () => {
     // use a query selector to select all the rows in the market activity table on the VFEX homepage
-    const data = document.querySelectorAll('section.elementor-inner-section:nth-child(6) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) tr');
-    const getDate = document.querySelector('section.elementor-inner-section:nth-child(5)  > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) h2').innerText.trim().split(" ").toSpliced(0,2);
+    const data = document.querySelectorAll('.elementor-text-editor > table:nth-child(1) > tbody:nth-child(1) tr');
+    const getDate = document.querySelector('.elementor-heading-title').innerText.trim();
     // // retrieving the current date to create a string to use when appending the CSV file and naming the JSON file
     const today = new Date(getDate);
     const year = today.getFullYear().toString();
@@ -54,11 +54,13 @@ const getMarketActivity = async () => {
     // the nodeList returned from executing 'data' is converted into an array of objects, with array elements having one 'key:value' property each
     // the array is then returned to the function that called it
     return Array.from(data).map( (el) => {
-      const activity = el.querySelector('td:nth-child(1)').innerText.trim();
-      const value = el.querySelector('td:nth-child(2)').innerText.trim();
+      const name = el.querySelector('td:nth-child(1)').innerText.trim();
+      const openingPrice = el.querySelector('td:nth-child(2)').innerText.trim();
+      const closingPrice = el.querySelector('td:nth-child(3)').innerText.trim();
+      const tradeVolume = el.querySelector('td:nth-child(4)').innerText.trim();
 
-      return { currentDate, activity, value }
-    })
+      return { currentDate, name, openingPrice, closingPrice, tradeVolume }
+    }).filter( el => el.name != '').filter( el => el.name != 'Company Name').filter( el => el.name != 'EQUITIES');
   });
 
   // close the headless instance of Chromium
@@ -71,32 +73,46 @@ const getMarketActivity = async () => {
 // log the data to the console
 // then append a CSV file with the returned data 
 // then save the returned data in a JSON file
-getMarketActivity().then( el => {
-  console.log(el);
-
-  // append the date to the first column of the CSV file
-  fs.appendFile('./vfex_market_activity/vfex_market_activity.csv', el[0].currentDate, err => {
-    if (err) throw err;
-    console.log(el[0].currentDate);
-  });
-
-  // append the scrapped data in 'value' to a CSV file
-  for ( let i = 0; i < el.length; i++) {
-    fs.appendFile('./vfex_market_activity/vfex_market_activity.csv', newLine(), err => {
-      if (err) throw err;
-      console.log(`${el[i].activity} saved to CSV`);
-    });
-    // function adds a newline character to the last array element appended to the CSV file
-    function newLine() {
-      if ( i === el.length - 1 ) {
-        return `,${el[i].value.toString().replace("USD$ ","").replaceAll(",","")}\n`
-      } else return `,${el[i].value.toString().replace("USD$ ","").replaceAll(",","")}`
-    }
-  }
+const equities = getMarketActivity().then( value => {
+  console.log(value);
 
   // save the scrapped data to a JSON file
-  fs.writeFile(`./vfex_market_activity/json/vfex-daily-market-activity-${theDate()}.json`, JSON.stringify(el), err => {
+  fs.writeFile(`./equities/json/${value[0].currentDate}.json`, JSON.stringify(value), err => {
     if (err) throw err;
-    console.log("Saved to JSON")
+    console.log(`Data for ${value[0].currentDate} saved to JSON.`)
   }); 
+
+  // append the date to the first column of the CSV files for CLOSING PRICE & TRADING VOLUME
+  fs.appendFile('./equities/closing_price.csv', `\n${value[0].currentDate}`, err => {
+    if (err) throw err;
+    console.log(`Saving data for ${value[0].currentDate} to closing_price.csv...`);
+  });
+  fs.appendFile('./equities/trade_volume.csv', `\n${value[0].currentDate}`, err => {
+    if (err) throw err;
+    console.log(`Saving data for ${value[0].currentDate} to trading_volume.csv...`);
+  });
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // // append the scrapped closing price data to the CLOSING PRICE CSV file
+  for ( let entity of value) {
+    fs.appendFile('./equities/closing_price.csv', `,${entity.closingPrice}`, err => {
+      if (err) {
+        console.log(`An error occured retrieving the closing price for ${entity.closingPrice} !!!`);
+      };
+      console.log(`${entity.name} saved to closing_price.csv...`);
+    });
+  }
+  console.log(`Closing price data for ${value[0].currentDate} successfully saved.`)
+  // append the scrapped trade volume data to the TRADE VOLUME CSV file
+  for ( let entity of value) {
+    fs.appendFile('./equities/trade_volume.csv', `,${entity.tradeVolume}`, err => {
+      if (err) {
+        console.log(`An error occured retrieving the trading volume for ${entity.closingPrice} !!!`);
+      };
+      console.log(`${entity.name} saved to trade_volume.csv...`);
+    });
+  }
+  console.log(`Trade volume data for ${value[0].currentDate} successfully saved.`)
 });
+
+module.exports = equities;

@@ -50,14 +50,12 @@ const getMarketIndices = async () => {
     const currentDate = year.concat("-", month, "-", day);
     // the nodeList returned from executing 'data' is converted into an array of objects, with array elements having one 'key:value' property each
     // the array is then returned to the function that called it
-    return Array.from(data).map( ( el, pos ) => {
-      if ( pos > 0 ) {
+    return Array.from(data).map( ( el ) => {
         const index = el.querySelector('td:nth-child(1)').innerText.trim();
         const price = el.querySelector('td:nth-child(2)').innerText.trim();
 
         return { currentDate, index, price }        
-      } else return
-    })
+    }).filter( el => el !== null).filter( el => el.index !== 'INDEX')
   });
 
   // close the headless instance of Chromium
@@ -70,33 +68,28 @@ const getMarketIndices = async () => {
 // log the data to the console
 // then append a CSV file with the returned data 
 // then save the returned data in a JSON file
-getMarketIndices().then( value => {
-  const arr = value.filter( e => e !== null)
-  console.log(arr);
+const marketIndices = getMarketIndices().then( value => {
+  console.log(value);
 
-  // append the date to the first column of the CSV file
-  fs.appendFile('./vfex_market_indices/vfex_market_indices.csv', arr[0].currentDate, err => {
-    if (err) throw err;
-    console.log(arr[0].currentDate);
-  });
-  
-  // append the scrapped data in 'value' to a CSV file
-  for (let i = 0; i < arr.length; i++) {
-    fs.appendFile('./vfex_market_indices/vfex_market_indices.csv', newLine(), err => {
-      if (err) throw err;
-      console.log(`${arr[i].index} saved to CSV`);
-    });
-    // function adds a newline character to the last array element appended to the CSV file
-    function newLine() {
-      if ( i === arr.length - 1 ) {
-        return `,${arr[i].price}\n`
-      } else return `,${arr[i].price}`
-    }
-  }
-
-  // append the date to the first column of the CSV file
-  fs.writeFile(`./vfex_market_indices/json/vfex_market_indices_closing_price_${theDate()}.json`, JSON.stringify(arr), err => {
+  // save the scrapped data to a JSON file
+  fs.writeFile(`./market_indices/json/${value[0].currentDate}.json`, JSON.stringify(value), err => {
     if (err) throw err;
     console.log(`Saved to JSON`);
   });  
+
+  // append the date to the first column of the CSV file
+  fs.appendFile('./market_indices/market_indices.csv', `\n${value[0].currentDate}`, err => {
+    if (err) throw err;
+    console.log(value[0].currentDate);
+  });
+  
+  // append the scrapped data in 'value' to a CSV file
+  for ( let entity of value ) {
+    fs.appendFile('./market_indices/market_indices.csv', `,${entity.price}`, err => {
+      if (err) throw err;
+      console.log(`${entity.index} saved to CSV`);
+    });    
+  }
 });
+
+module.exports = marketIndices;
