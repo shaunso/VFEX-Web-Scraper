@@ -16,7 +16,7 @@ function theDate() {
 }
 
 // executing the web scrapper
-const getMarketActivity = async () => {
+const getEquities = async () => {
   // launch the imported Puppeteer module
   // Puppeter will start a headless instance of the Chromium browser
   const browser = await puppeteer.launch();
@@ -53,14 +53,17 @@ const getMarketActivity = async () => {
     const currentDate = year.concat("-", month, "-", day);
     // the nodeList returned from executing 'data' is converted into an array of objects, with array elements having one 'key:value' property each
     // the array is then returned to the function that called it
-    return Array.from(data).map( (el) => {
-      const name = el.querySelector('td:nth-child(1)').innerText.trim();
-      const openingPrice = el.querySelector('td:nth-child(2)').innerText.trim();
-      const closingPrice = el.querySelector('td:nth-child(3)').innerText.trim();
-      const tradeVolume = el.querySelector('td:nth-child(4)').innerText.trim();
-
+    const test = document.querySelectorAll('.elementor-text-editor > table:nth-child(1) > tbody:nth-child(1) > tr > td');
+    return Array.from(data).map( ( el, pos) => {
+      if ( pos > 3 ){
+      const name = el.querySelector('td:nth-child(2)').innerText.trim();
+      const openingPrice = el.querySelector('td:nth-child(3)').innerText.trim();
+      const closingPrice = el.querySelector('td:nth-child(4)').innerText.trim();
+      const tradeVolume = el.querySelector('td:nth-child(5)').innerText.trim();
+      
       return { currentDate, name, openingPrice, closingPrice, tradeVolume }
-    }).filter( el => el.name != '').filter( el => el.name != 'Company Name').filter( el => el.name != 'EQUITIES');
+      } else return
+    })
   });
 
   // close the headless instance of Chromium
@@ -69,13 +72,15 @@ const getMarketActivity = async () => {
   return result
 }
 
-// once the market activity data is returned by the web scrapper
-// log the data to the console
-// then append a CSV file with the returned data 
-// then save the returned data in a JSON file
-const equities = getMarketActivity().then( value => {
-  console.log(value);
 
+const equities = getEquities().then( arr => {
+  const value = arr.filter( el => el !== null).filter( el => el.name);
+  console.log(value)
+  
+  // once the market activity data is returned by the web scrapper
+  // log the data to the console
+  // then append a CSV file with the returned data 
+  // then save the returned data in a JSON file
   // save the scrapped data to a JSON file
   fs.writeFile(`./equities/json/${value[0].currentDate}.json`, JSON.stringify(value), err => {
     if (err) throw err;
@@ -92,8 +97,8 @@ const equities = getMarketActivity().then( value => {
     console.log(`Saving data for ${value[0].currentDate} to trading_volume.csv...`);
   });
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
-  // // append the scrapped closing price data to the CLOSING PRICE CSV file
+  // //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // append the scrapped closing price data to the CLOSING PRICE CSV file
   for ( let entity of value) {
     fs.appendFile('./equities/closing_price.csv', `,${entity.closingPrice}`, err => {
       if (err) {
