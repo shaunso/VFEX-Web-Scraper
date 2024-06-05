@@ -87,12 +87,20 @@ const marketActivity = getMarketActivity().then( value => {
   });
 
   // append the scrapped data in 'value' to a CSV file
-  for ( let entity of value) {
-    fs.appendFile('./market_activity/market_activity.csv', `,${entity.value.toString().replace("USD$ ","").replaceAll(",","")}`, err => {
-      if (err) {
-        console.log(`An error occured retrieving the data for ${entity.activity} !!!`);
-      };
-      console.log(`${entity.activity} saved to CSV...`);
+  // for ( let entity of value) {
+  //   fs.appendFile('./market_activity/market_activity.csv', `,${entity.value.toString().replace("USD$","").replaceAll(",","")}`, err => {
+  //     if (err) {
+  //       console.log(`An error occured retrieving the data for ${entity.activity} !!!`);
+  //     };
+  //     console.log(`${entity.activity} saved to CSV...`);
+  //   });
+  // }
+
+  for (let entity of value) {
+    const csvRow = `,${entity.value.toString().replace("USD$", "").replaceAll(",", "")}`;
+    fs.appendFile('./market_activity/market_activity.csv', csvRow, err => {
+      // Error handling 
+      if (err) throw err
     });
   }
 });

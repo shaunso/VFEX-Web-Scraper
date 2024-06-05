@@ -78,14 +78,14 @@ const marketIndices = getMarketIndices().then( value => {
   });  
 
   // append the date to the first column of the CSV file
-  fs.appendFile('./market_indices/market_indices.csv', `\n${value[0].currentDate}`, err => {
+  fs.appendFile('./market_indices/closing_price.csv', `\n${value[0].currentDate}`, err => {
     if (err) throw err;
     console.log(value[0].currentDate);
   });
   
   // append the scrapped data in 'value' to a CSV file
   for ( let entity of value ) {
-    fs.appendFile('./market_indices/market_indices.csv', `,${entity.price}`, err => {
+    fs.appendFile('./market_indices/closing_price.csv', `,${entity.price}`, err => {
       if (err) throw err;
       console.log(`${entity.index} saved to CSV`);
     });    
