@@ -53,13 +53,12 @@ const getEquities = async () => {
     const currentDate = year.concat("-", month, "-", day);
     // the nodeList returned from executing 'data' is converted into an array of objects, with array elements having one 'key:value' property each
     // the array is then returned to the function that called it
-    const test = document.querySelectorAll('.elementor-text-editor > table:nth-child(1) > tbody:nth-child(1) > tr > td');
     return Array.from(data).map( ( el, pos) => {
-      if ( pos > 3 ){
-      const name = el.querySelector('td:nth-child(2)').innerText.trim();
-      const openingPrice = el.querySelector('td:nth-child(3)').innerText.trim();
-      const closingPrice = el.querySelector('td:nth-child(4)').innerText.trim();
-      const tradeVolume = el.querySelector('td:nth-child(5)').innerText.trim();
+      if ( pos > 1 ){
+      const name = el.querySelector('td:nth-child(1)').innerText.trim();
+      const openingPrice = el.querySelector('td:nth-child(2)').innerText.trim();
+      const closingPrice = el.querySelector('td:nth-child(3)').innerText.trim();
+      const tradeVolume = el.querySelector('td:nth-child(4)').innerText.trim();
       
       return { currentDate, name, openingPrice, closingPrice, tradeVolume }
       } else return
@@ -88,11 +87,11 @@ const equities = getEquities().then( arr => {
   }); 
 
   // append the date to the first column of the CSV files for CLOSING PRICE & TRADING VOLUME
-  fs.appendFile('./equities/closing_price.csv', `\n${value[0].currentDate}`, err => {
+  fs.appendFileSync('./equities/closing_price.csv', `\n${value[0].currentDate}`, err => {
     if (err) throw err;
     console.log(`Saving data for ${value[0].currentDate} to closing_price.csv...`);
   });
-  fs.appendFile('./equities/trade_volume.csv', `\n${value[0].currentDate}`, err => {
+  fs.appendFileSync('./equities/trade_volume.csv', `\n${value[0].currentDate}`, err => {
     if (err) throw err;
     console.log(`Saving data for ${value[0].currentDate} to trading_volume.csv...`);
   });
@@ -100,24 +99,25 @@ const equities = getEquities().then( arr => {
   // //////////////////////////////////////////////////////////////////////////////////////////////////////
   // append the scrapped closing price data to the CLOSING PRICE CSV file
   for ( let entity of value) {
-    fs.appendFile('./equities/closing_price.csv', `,${entity.closingPrice}`, err => {
+    fs.appendFileSync('./equities/closing_price.csv', `,${entity.closingPrice}`, err => {
       if (err) {
         console.log(`An error occured retrieving the closing price for ${entity.closingPrice} !!!`);
       };
-      console.log(`${entity.name} saved to closing_price.csv...`);
     });
   }
   console.log(`Closing price data for ${value[0].currentDate} successfully saved.`)
   // append the scrapped trade volume data to the TRADE VOLUME CSV file
   for ( let entity of value) {
-    fs.appendFile('./equities/trade_volume.csv', `,${entity.tradeVolume}`, err => {
+    fs.appendFileSync('./equities/trade_volume.csv', `,${entity.tradeVolume}`, err => {
       if (err) {
         console.log(`An error occured retrieving the trading volume for ${entity.closingPrice} !!!`);
       };
-      console.log(`${entity.name} saved to trade_volume.csv...`);
     });
   }
-  console.log(`Trade volume data for ${value[0].currentDate} successfully saved.`)
+
+  console.log(`${value.length} out of an expected 13 equities data successfully scrapped`)
 });
+
+console.log('Web scrapping currently in progress');
 
 module.exports = equities;

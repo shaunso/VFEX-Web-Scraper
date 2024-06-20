@@ -81,14 +81,14 @@ const marketActivity = getMarketActivity().then( value => {
   }); 
 
   // append the date to the first column of the CSV file
-  fs.appendFile('./market_activity/market_activity.csv', `\n${value[0].currentDate}`, err => {
+  fs.appendFileSync('./market_activity/market_activity.csv', `\n${value[0].currentDate}`, err => {
     if (err) throw err;
     console.log(value[0].currentDate);
   });
 
   // append the scrapped data in 'value' to a CSV file
   // for ( let entity of value) {
-  //   fs.appendFile('./market_activity/market_activity.csv', `,${entity.value.toString().replace("USD$","").replaceAll(",","")}`, err => {
+  //   fs.appendFileSync('./market_activity/market_activity.csv', `,${entity.value.toString().replace("USD$","").replaceAll(",","")}`, err => {
   //     if (err) {
   //       console.log(`An error occured retrieving the data for ${entity.activity} !!!`);
   //     };
@@ -98,7 +98,7 @@ const marketActivity = getMarketActivity().then( value => {
 
   for (let entity of value) {
     const csvRow = `,${entity.value.toString().replace("USD$", "").replaceAll(",", "")}`;
-    fs.appendFile('./market_activity/market_activity.csv', csvRow, err => {
+    fs.appendFileSync('./market_activity/market_activity.csv', csvRow, err => {
       // Error handling 
       if (err) throw err
     });
